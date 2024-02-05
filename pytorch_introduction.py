@@ -11,6 +11,8 @@ from torchvision.datasets import FashionMNIST
 import torchvision.transforms as transforms
 from torchvision.datasets import ImageFolder
 
+from torchtext import data
+
 
 def _2_2_1():  # 张量的数据类型
     # 获取张量的数据类型
@@ -661,6 +663,61 @@ def _2_5_2():  # pytorch预处理-图像数据
     test_data_y = test_data.targets
     print(test_data_x.shape, test_data_y.shape)
 
+    # 从文件夹中导入数据并进行预处理
+    train_data_transforms = transforms.Compose([
+        transforms.RandomResizedCrop(224),  # 随机长宽比裁剪为224*224
+        transforms.RandomHorizontalFlip(),  # 依概率p = 0.5 水平翻转
+        transforms.ToTensor(),  # 转化为张量并归一化至[0-1]
+        # 图像标准化处理
+        transforms.Normalize([0.485, 0.456, 0.406],
+                             [0.229, 0.224, 0.225])
+    ])
+
+    # 读取图像
+    train_data_dir = "data/chap2/imagedata/"
+    train_data = ImageFolder(train_data_dir, transform=train_data_transforms)
+    train_data_loader = torch.utils.data.DataLoader(
+        train_data,
+        batch_size=4,
+        shuffle=True,
+        num_workers=1
+    )
+    print("数据集的label:", train_data.targets)
+    # 获得一个batch的数据
+    for step, (b_x, b_y) in enumerate(train_data_loader):
+        if step > 0:
+            break
+    # 输出训练图像的尺寸和标签的尺寸
+    print(b_x.shape)
+    print(b_y.shape)
+    print("图像的取值范围:", b_x.min(), "~", b_x.max())
+
+
+def _2_5_3():  # pytorch预处理-文本数据
+    # 定义文本切分方法, 使用空格切分即可
+    mytokenize = lambda x: x.split()
+    # 定义将文本转化为张量的相关操作
+    TEXT = data.Field(
+        sequential=True,  # 表明输入的文本是字符
+        tokenize=mytokenize,  # 使用自定义的分词方法
+        use_vocab=True,  # 创建一个词汇表
+        batch_first=True,  # batch优先的数据方式
+        fix_length=200  # 每个句子固定长度为200
+    )
+    # 定义将标签转化为张量的相关操作
+    LABEL = data.Field(
+        sequential=False,  # 表明输入的标签是数字
+        use_vocab=False,  # 不创建词汇表
+        pad_token=None,  # 不进行填充
+        unk_token=None  # 没有无法识别的字符
+    )
+    # 对所要读取的数据集的每列进行处理
+    text_data_fields = [
+        ("label", LABEL),  # 对标签的操作
+        ("text", TEXT),  # 对文本的操作
+    ]
+    # 读取数据
+    # train_data, test_data = data.TabularDataset.splits
 
 if __name__ == '__main__':
     # _2_2_1()  # 张量的数据类型
@@ -678,4 +735,5 @@ if __name__ == '__main__':
     # _2_4_2()  # torch.nn模块-池化层
     # _2_4_3()  # torch.nn模块-激活函数
     # _2_5_1()  # Pytorch预处理-高维数组
-    _2_5_2()  # pytorch预处理-图像数据
+    # _2_5_2()  # pytorch预处理-图像数据
+    _2_5_3()  # pytorch预处理-文本数据
